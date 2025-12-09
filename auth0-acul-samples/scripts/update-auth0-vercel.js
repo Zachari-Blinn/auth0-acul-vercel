@@ -80,7 +80,7 @@ function getAssetHashes() {
     main: extractHash(files, 'main.'),
     loginId: extractHash(files, 'login-id/index.'),
     vendor: extractHash(files, 'shared/vendor.'),
-    common: extractHash(files, 'shared/common.')
+    reactVendor: extractHash(files, 'shared/react-vendor.')
   };
 
   // Validate all required hashes are found
@@ -141,7 +141,7 @@ function buildAuth0Config(hashes, baseUrl) {
       {
         tag: 'script',
         attributes: {
-          src: `${cleanUrl}/assets/shared/common.${hashes.common}.js`,
+          src: `${cleanUrl}/assets/shared/react-vendor.${hashes.reactVendor}.js`,
           type: 'module',
           defer: true
         }
