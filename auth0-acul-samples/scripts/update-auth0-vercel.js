@@ -138,55 +138,55 @@ function buildAuth0Config(hashes, baseUrl) {
   // Ensure URL has https:// and no trailing slash
   const cleanUrl = baseUrl.replace(/\/$/, '');
   
+  const headTags = [
+    {
+      tag: 'base',
+      attributes: {
+        href: `${cleanUrl}/`
+      }
+    },
+    {
+      tag: 'script',
+      attributes: {
+        src: `${cleanUrl}/assets/main.${hashes.main}.js`,
+        type: 'module',
+        defer: true
+      }
+    },
+    {
+      tag: 'link',
+      attributes: {
+        rel: 'stylesheet',
+        href: `${cleanUrl}/assets/shared/style.${hashes.style}.css`
+      }
+    }
+  ];
+  
+  // Add common.js if it exists
+  if (hashes.common) {
+    headTags.push({
+      tag: 'script',
+      attributes: {
+        src: `${cleanUrl}/assets/shared/common.${hashes.common}.js`,
+        type: 'module',
+        defer: true
+      }
+    });
+  }
+  
+  // Add vendor.js
+  headTags.push({
+    tag: 'script',
+    attributes: {
+      src: `${cleanUrl}/assets/shared/vendor.${hashes.vendor}.js`,
+      type: 'module',
+      defer: true
+    }
+  });
+  
   return {
     rendering_mode: 'advanced',
-    head_tags: [
-      {
-        tag: 'base',
-        attributes: {
-          href: `${cleanUrl}/`
-        }
-      },
-      {
-        tag: 'script',
-        attributes: {
-          src: `${cleanUrl}/assets/main.${hashes.main}.js`,
-          type: 'module',
-          defer: true
-        }
-      },
-      {
-        tag: 'link',
-        attributes: {
-          rel: 'stylesheet',
-          href: `${cleanUrl}/assets/shared/style.${hashes.style}.css`
-        }
-      },
-      {
-        tag: 'script',
-        attributes: {
-          src: `${cleanUrl}/assets/login-id/index.${hashes.loginId}.js`,
-          type: 'module',
-          defer: true
-        }
-      },
-      {
-        tag: 'script',
-        attributes: {
-          src: `${cleanUrl}/assets/shared/react-vendor.${hashes.reactVendor}.js`,
-          type: 'module',
-          defer: true
-        }
-      },
-      {
-        tag: 'script',
-        attributes: {
-          src: `${cleanUrl}/assets/shared/vendor.${hashes.vendor}.js`,
-          type: 'module',
-          defer: true
-        }
-      }
-    ]
+    head_tags: headTags
   };
 }
 
@@ -242,7 +242,7 @@ async function main() {
     console.log('🌐 Fetching deployed assets from Vercel...');
     const html = await getAssetHashesFromVercel(VERCEL_URL);
     
-    // Extract hashes from script tags in HTML
+    // Extract hashes from script and link tags in HTML
     const mainMatch = html.match(/\/assets\/main\.([a-zA-Z0-9_-]+)\.js/);
     const styleMatch = html.match(/\/assets\/shared\/style\.([a-zA-Z0-9_-]+)\.css/);
     const vendorMatch = html.match(/\/assets\/shared\/vendor\.([a-zA-Z0-9_-]+)\.js/);
@@ -265,16 +265,9 @@ async function main() {
     const hashes = {
       style: styleMatch ? styleMatch[1] : null,
       main: mainMatch ? mainMatch[1] : null,
-      loginId: loginIdFiles ? loginIdFiles[1] : null,
       vendor: vendorMatch ? vendorMatch[1] : null,
-      reactVendor: null // Will extract if found
+      common: commonMatch ? commonMatch[1] : null
     };
-    
-    // Check for react-vendor
-    const reactVendorMatch = html.match(/\/assets\/shared\/react-vendor\.([a-zA-Z0-9_-]+)\.js/);
-    if (reactVendorMatch) {
-      hashes.reactVendor = reactVendorMatch[1];
-    }
     
     console.log('✅ Extracted hashes from Vercel deployment:');
     Object.entries(hashes).forEach(([key, value]) => {
