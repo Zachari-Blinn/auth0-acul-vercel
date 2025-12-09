@@ -85,6 +85,10 @@ jobs:
           mkdir -p deploy-temp
           cp -r auth0-acul-samples/react-js/dist/* deploy-temp/
           echo "Clean deployment directory created"
+          echo "Verifying vercel.json in deploy-temp:"
+          cat deploy-temp/vercel.json
+          echo "Files in deploy-temp:"
+          ls -la deploy-temp/
 
       - name: 🚀 Install Vercel CLI
         run: npm install --global vercel@latest
