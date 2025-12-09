@@ -47,9 +47,8 @@ jobs:
 
       - name: 🚢 Deploy to Vercel
         id: deploy
-        working-directory: auth0-acul-samples/react-js/dist
         run: |
-          DEPLOYMENT_URL=$(vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }})
+          DEPLOYMENT_URL=$(vercel deploy auth0-acul-samples/react-js/dist --prod --token=${{ secrets.VERCEL_TOKEN }})
           echo "Deployed to: $DEPLOYMENT_URL"
           echo "url=https://auth0-acul-samples.vercel.app" >> $GITHUB_OUTPUT
 
