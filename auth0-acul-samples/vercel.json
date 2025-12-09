@@ -1,7 +1,4 @@
 {
-  "version": 2,
-  "buildCommand": "echo 'Using pre-built assets'",
-  "installCommand": "echo 'Dependencies already installed'",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
