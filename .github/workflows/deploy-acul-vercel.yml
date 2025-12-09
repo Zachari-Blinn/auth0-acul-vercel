@@ -39,11 +39,8 @@ jobs:
           cat > auth0-acul-samples/react-js/dist/vercel.json << 'EOF'
           {
             "version": 2,
-            "routes": [
-              {
-                "handle": "filesystem"
-              }
-            ],
+            "cleanUrls": true,
+            "trailingSlash": false,
             "headers": [
               {
                 "source": "/(.*)",
