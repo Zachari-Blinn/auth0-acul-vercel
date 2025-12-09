@@ -45,6 +45,38 @@ function extractHash(files, pattern) {
   return match ? match[1] : null;
 }
 
+// Fetch the index.html from Vercel to extract actual deployed hashes
+function getAssetHashesFromVercel(vercelUrl) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(vercelUrl);
+    
+    const options = {
+      hostname: url.hostname,
+      path: '/',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Auth0-ACUL-Updater/1.0'
+      }
+    };
+
+    https.get(options, (res) => {
+      let html = '';
+      
+      res.on('data', (chunk) => {
+        html += chunk;
+      });
+      
+      res.on('end', () => {
+        console.log('📦 Fetched index.html from Vercel');
+        resolve(html);
+      });
+    }).on('error', (error) => {
+      console.error('❌ Failed to fetch from Vercel:', error.message);
+      reject(error);
+    });
+  });
+}
+
 // Read built assets and extract hashes
 function getAssetHashes() {
   const distPath = path.join(__dirname, '../react-js/dist/assets');
@@ -206,8 +238,58 @@ function updateAuth0Screen(prompt, screen, config) {
 // Main execution
 async function main() {
   try {
-    // Step 1: Get asset hashes
-    const hashes = getAssetHashes();
+    // Step 1: Fetch actual deployed HTML from Vercel
+    console.log('🌐 Fetching deployed assets from Vercel...');
+    const html = await getAssetHashesFromVercel(VERCEL_URL);
+    
+    // Extract hashes from script tags in HTML
+    const mainMatch = html.match(/\/assets\/main\.([a-zA-Z0-9_-]+)\.js/);
+    const styleMatch = html.match(/\/assets\/shared\/style\.([a-zA-Z0-9_-]+)\.css/);
+    const vendorMatch = html.match(/\/assets\/shared\/vendor\.([a-zA-Z0-9_-]+)\.js/);
+    const commonMatch = html.match(/\/assets\/shared\/common\.([a-zA-Z0-9_-]+)\.js/);
+    
+    // For login-id, we need to check the actual file on Vercel
+    const loginIdFiles = await new Promise((resolve) => {
+      https.get(`${VERCEL_URL}/screens/login-id/login-id/default.json`, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          // Try to find login-id hash by checking common patterns
+          const loginIdMatch = html.match(/\/assets\/login-id\/index\.([a-zA-Z0-9_-]+)\.js/) || 
+                              data.match(/index\.([a-zA-Z0-9_-]+)\.js/);
+          resolve(loginIdMatch);
+        });
+      }).on('error', () => resolve(null));
+    });
+    
+    const hashes = {
+      style: styleMatch ? styleMatch[1] : null,
+      main: mainMatch ? mainMatch[1] : null,
+      loginId: loginIdFiles ? loginIdFiles[1] : null,
+      vendor: vendorMatch ? vendorMatch[1] : null,
+      reactVendor: null // Will extract if found
+    };
+    
+    // Check for react-vendor
+    const reactVendorMatch = html.match(/\/assets\/shared\/react-vendor\.([a-zA-Z0-9_-]+)\.js/);
+    if (reactVendorMatch) {
+      hashes.reactVendor = reactVendorMatch[1];
+    }
+    
+    console.log('✅ Extracted hashes from Vercel deployment:');
+    Object.entries(hashes).forEach(([key, value]) => {
+      if (value) console.log(`   ${key}: ${value}`);
+    });
+    
+    // Validate required hashes
+    const requiredHashes = ['style', 'main', 'vendor'];
+    const missingHashes = requiredHashes.filter(key => !hashes[key]);
+    
+    if (missingHashes.length > 0) {
+      console.error('❌ Missing required hashes:', missingHashes.join(', '));
+      console.error('HTML preview:', html.substring(0, 500));
+      process.exit(1);
+    }
     
     // Step 2: Build configuration
     const config = buildAuth0Config(hashes, VERCEL_URL);
