@@ -27,17 +27,17 @@ jobs:
           node-version: '20'
 
       - name: 📦 Install dependencies
-        working-directory: react-js
+        working-directory: auth0-acul-samples/react-js
         run: npm ci
 
       - name: 🏗️ Build ACUL assets
-        working-directory: react-js
+        working-directory: auth0-acul-samples/react-js
         run: npm run build
 
       - name: 📋 List built assets
         run: |
           echo "Built assets:"
-          ls -lah react-js/dist/assets/
+          ls -lah auth0-acul-samples/react-js/dist/assets/
 
       - name: 🚀 Install Vercel CLI
         run: npm install --global vercel@latest
@@ -45,7 +45,7 @@ jobs:
       - name: 🚢 Deploy to Vercel
         id: deploy
         run: |
-          cd react-js/dist
+          cd auth0-acul-samples/react-js/dist
           DEPLOYMENT_URL=$(vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }})
           echo "Deployed to: $DEPLOYMENT_URL"
           echo "url=https://auth0-acul-samples.vercel.app" >> $GITHUB_OUTPUT
@@ -55,7 +55,7 @@ jobs:
           AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
           AUTH0_MGMT_TOKEN: ${{ secrets.AUTH0_MGMT_TOKEN }}
           VERCEL_URL: "https://auth0-acul-samples.vercel.app"
-        run: node scripts/update-auth0-vercel.js
+        run: node auth0-acul-samples/scripts/update-auth0-vercel.js
 
       - name: ✅ Deployment Complete
         run: |
