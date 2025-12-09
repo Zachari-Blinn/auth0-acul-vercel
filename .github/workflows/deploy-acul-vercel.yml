@@ -39,6 +39,7 @@ jobs:
           cat > auth0-acul-samples/react-js/dist/vercel.json << 'EOF'
           {
             "version": 2,
+            "builds": [],
             "cleanUrls": true,
             "trailingSlash": false,
             "headers": [
