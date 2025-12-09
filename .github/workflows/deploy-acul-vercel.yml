@@ -1,99 +1,93 @@
 name: Deploy ACUL to Vercel
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
 
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: 📦 Install dependencies
-        working-directory: auth0-acul-samples/react-js
-        run: npm ci
+      - name: 📦 Install dependencies
+        working-directory: auth0-acul-samples/react-js
+        run: npm ci
 
-      - name: 🏗️ Build ACUL assets
-        working-directory: auth0-acul-samples/react-js
-        run: npm run build
+      - name: 🏗️ Build ACUL assets
+        working-directory: auth0-acul-samples/react-js
+        run: npm run build
 
-      - name: 📋 List built assets
-        run: |
-          echo "Built assets:"
-          ls -lah auth0-acul-samples/react-js/dist/assets/
+      - name: 📋 List built assets
+        run: |
+          echo "Built assets:"
+          ls -lah auth0-acul-samples/react-js/dist/assets/
 
-      - name: 📄 Copy vercel.json to dist folder
-        run: cp auth0-acul-samples/vercel.json auth0-acul-samples/react-js/dist/
+      - name: 📄 Copy vercel.json to dist folder
+        run: cp auth0-acul-samples/vercel.json auth0-acul-samples/react-js/dist/
 
-      - name: 🚀 Install Vercel CLI
-        run: npm install --global vercel@latest
+      - name: 🚀 Install Vercel CLI
+        run: npm install --global vercel@latest
 
-      - name: 🚢 Deploy to Vercel
-        id: deploy
-        run: |
-          # FIX: Deploy the specific folder (the build output) from the repository root.
-          # This prevents Vercel from incorrectly combining paths.
-          DEPLOYMENT_URL=$(vercel deploy \
-            auth0-acul-samples/react-js/dist \
-            --prebuilt \
-            --prod \
-            --token=${{ secrets.VERCEL_TOKEN }})
-          
-          echo "Deployed to: $DEPLOYMENT_URL"
-          echo "url=https://auth0-acul-samples.vercel.app" >> $GITHUB_OUTPUT
+      - name: 🚢 Deploy to Vercel
+        id: deploy
+        working-directory: auth0-acul-samples/react-js/dist
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Deployed to: $DEPLOYMENT_URL"
+          echo "url=https://auth0-acul-samples.vercel.app" >> $GITHUB_OUTPUT
 
-      - name: 🔄 Update Auth0 Configuration
-        env:
-          AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
-          AUTH0_MGMT_TOKEN: ${{ secrets.AUTH0_MGMT_TOKEN }}
-          VERCEL_URL: "https://auth0-acul-samples.vercel.app"
-        run: node auth0-acul-samples/scripts/update-auth0-vercel.js
+      - name: 🔄 Update Auth0 Configuration
+        env:
+          AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
+          AUTH0_MGMT_TOKEN: ${{ secrets.AUTH0_MGMT_TOKEN }}
+          VERCEL_URL: "https://auth0-acul-samples.vercel.app"
+        run: node auth0-acul-samples/scripts/update-auth0-vercel.js
 
-      - name: ✅ Deployment Complete
-        run: |
-          echo "================================"
-          echo "🎉 Deployment Successful!"
-          echo "================================"
-          echo "🔗 Live URL: https://auth0-acul-samples.vercel.app"
-          echo "================================"
+      - name: ✅ Deployment Complete
+        run: |
+          echo "================================"
+          echo "🎉 Deployment Successful!"
+          echo "================================"
+          echo "🔗 Live URL: https://auth0-acul-samples.vercel.app"
+          echo "================================"
 
-      - name: 💬 Comment PR with Deployment URL
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## 🚀 ACUL Deployed to Vercel
+      - name: 💬 Comment PR with Deployment URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🚀 ACUL Deployed to Vercel
 
-              **Deployment URL:** https://auth0-acul-samples.vercel.app
-              
-              ✅ Auth0 configuration has been updated automatically.
-              
-              ### Test the deployment:
-              1. Go to your Auth0 application
-              2. Click the login button
-              3. You should see your customized ACUL screen
-              
-              ---
-              Deployment triggered by: @${{ github.actor }}`
-            })
+              **Deployment URL:** https://auth0-acul-samples.vercel.app
+              
+              ✅ Auth0 configuration has been updated automatically.
+              
+              ### Test the deployment:
+              1. Go to your Auth0 application
+              2. Click the login button
+              3. You should see your customized ACUL screen
+              
+              ---
+              Deployment triggered by: @${{ github.actor }}`
+            })
