@@ -24,63 +24,43 @@ jobs:
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-
-      - name: 📦 Install dependencies (root)
-        working-directory: auth0-acul-samples
-        run: npm ci --ignore-scripts
-
-      - name: 📦 Install dependencies (react-js)
-        working-directory: auth0-acul-samples/react-js
-        run: npm ci
-
-      - name: 🏗️ Build ACUL assets
-        working-directory: auth0-acul-samples
-        run: npm run build:all
-
-      - name: 📋 List built assets
-        run: |
-          echo "Built assets:"
-          ls -lh auth0-acul-samples/react-js/dist/assets/
+          node-version: '20'  # ← Changed from 18 to 20 (required by Vite)
 
       - name: 🚀 Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: 🔗 Pull Vercel Environment Information
-        working-directory: auth0-acul-samples
+      - name: 🔗 Pull Vercel Environment
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: 🏗️ Build Project Artifacts for Vercel
-        working-directory: auth0-acul-samples
+      - name: 🏗️ Build with Vercel
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: 🛠️ Deploy to Vercel
+      - name: 📋 List built assets
+        run: |
+          echo "Built assets:"
+          ls -lah .vercel/output/static/assets/
+
+      - name: 🚢 Deploy to Vercel
         id: deploy
-        working-directory: auth0-acul-samples
         run: |
           DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
-          echo "Deployment URL: $DEPLOYMENT_URL"
-          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
-
-      - name: 📝 Display Deployment URL
-        run: |
-          echo "🎉 Deployed to: ${{ steps.deploy.outputs.url }}"
+          echo "Deployed to: $DEPLOYMENT_URL"
+          # Use production URL instead of preview URL
+          echo "url=https://auth0-acul-samples.vercel.app" >> $GITHUB_OUTPUT
 
       - name: 🔄 Update Auth0 Configuration
-        working-directory: auth0-acul-samples
         env:
           AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
           AUTH0_MGMT_TOKEN: ${{ secrets.AUTH0_MGMT_TOKEN }}
-          VERCEL_URL: ${{ steps.deploy.outputs.url }}
-        run: node scripts/update-auth0-vercel.js
+          VERCEL_URL: "https://auth0-acul-samples.vercel.app"  # ← Use production URL
+        run: node auth0-acul-samples/scripts/update-auth0-vercel.js
 
       - name: ✅ Deployment Complete
         run: |
           echo "================================"
           echo "🎉 Deployment Successful!"
           echo "================================"
-          echo "🔗 Live URL: ${{ steps.deploy.outputs.url }}"
-          echo "📝 Check deployment-info.json for details"
+          echo "🔗 Live URL: https://auth0-acul-samples.vercel.app"
           echo "================================"
 
       - name: 💬 Comment PR with Deployment URL
@@ -94,7 +74,7 @@ jobs:
               repo: context.repo.repo,
               body: `## 🚀 ACUL Deployed to Vercel
 
-              **Deployment URL:** ${{ steps.deploy.outputs.url }}
+              **Deployment URL:** https://auth0-acul-samples.vercel.app
               
               ✅ Auth0 configuration has been updated automatically.
               
