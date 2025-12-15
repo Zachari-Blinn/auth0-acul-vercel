@@ -4,8 +4,8 @@
 # when the workflow is run without specific overriding inputs.
 
 default_screen_deployment_status:
-  "login-id": false
-  "login-password": false
+  "login-id": true
+  "login-password": true
   "login": false
   # Screens not yet implemented:
   # "accept-invitation": false
